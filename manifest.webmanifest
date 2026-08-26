@@ -1,0 +1,10 @@
+{
+  "name": "Torneo Villa Olímpica",
+  "short_name": "Villa Olímpica",
+  "description": "Control de resultados, tabla y sanciones del Torneo Fútbol 9 Villa Olímpica.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#d71920",
+  "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
