@@ -113,6 +113,148 @@ $("exportBtn").addEventListener("click",()=>{let blob=new Blob([JSON.stringify({
 $("importBtn").addEventListener("click",()=>$("fileInput").click());
 $("fileInput").addEventListener("change",e=>{let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let d=JSON.parse(rd.result);let s=d.state||d;if(!Array.isArray(s.results)||!Array.isArray(s.deductions))throw 0;state=s;save();render();alert("Copia restaurada correctamente.")}catch{alert("No pude leer esa copia.")}e.target.value=""};rd.readAsText(f)});
 render();
+ /* REGISTRO DE DESCANSOS */
+if(!Array.isArray(state.rests)) state.rests=[];
+
+const restTab=document.createElement("button");
+restTab.textContent="Descanso";
+restTab.dataset.view="descanso";
+document.querySelector(".tabs").appendChild(restTab);
+
+const restView=document.createElement("section");
+restView.id="descanso";
+restView.className="view hidden";
+restView.innerHTML=`
+<div class="card">
+<h2>Registrar descanso</h2>
+<div class="notice">
+Un equipo que descansa no suma partido jugado, puntos ni goles.
+Solo queda registrada la fecha del descanso.
+</div>
+
+<form id="restForm" class="grid">
+<div class="field">
+<label>Fecha</label>
+<select id="restFecha"></select>
+</div>
+
+<div class="field">
+<label>Equipo</label>
+<select id="restEquipo"></select>
+</div>
+
+<div class="full">
+<button class="btn primary" style="width:100%">
+Registrar descanso
+</button>
+</div>
+</form>
+
+<div id="restMsg" class="meta"></div>
+</div>
+
+<div class="card">
+<h2>Descansos registrados</h2>
+<div id="restHistory"></div>
+</div>
+`;
+
+document.querySelector("main").appendChild(restView);
+
+for(let i=1;i<=21;i++){
+  let o=document.createElement("option");
+  o.value=i;
+  o.textContent="Fecha "+i;
+  $("restFecha").appendChild(o);
+}
+
+for(const t of TEAMS){
+  let o=document.createElement("option");
+  o.value=t;
+  o.textContent=t;
+  $("restEquipo").appendChild(o);
+}
+
+$("restEquipo").value="LA BONGA FC";
+
+function renderRests(){
+  if(!state.rests.length){
+    $("restHistory").innerHTML=
+      '<div class="empty">Todavía no hay descansos registrados.</div>';
+    return;
+  }
+
+  $("restHistory").innerHTML=state.rests
+    .sort((a,b)=>a.fecha-b.fecha)
+    .map(r=>`
+      <div class="match">
+        <div>
+          <b>Fecha ${r.fecha}</b> · ${r.team}
+          <div class="meta">
+            Descansó — no suma PJ, puntos ni goles
+          </div>
+        </div>
+        <button class="btn danger" data-restdel="${r.id}">
+          Eliminar
+        </button>
+      </div>
+    `).join("");
+}
+
+restTab.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button")
+    .forEach(x=>x.classList.remove("active"));
+
+  restTab.classList.add("active");
+
+  document.querySelectorAll(".view")
+    .forEach(v=>v.classList.toggle(
+      "hidden",
+      v.id!=="descanso"
+    ));
+
+  renderRests();
+});
+
+$("restForm").addEventListener("submit",e=>{
+  e.preventDefault();
+
+  const fecha=+$("restFecha").value;
+  const team=$("restEquipo").value;
+
+  if(state.rests.some(r=>r.fecha===fecha && r.team===team)){
+    $("restMsg").textContent=
+      "⚠️ Ese equipo ya tiene registrado ese descanso.";
+    return;
+  }
+
+  state.rests.push({
+    id:Date.now()+Math.random(),
+    fecha:fecha,
+    team:team
+  });
+
+  save();
+  renderRests();
+
+  $("restMsg").textContent=
+    "✅ Descanso registrado. No modifica puntos, PJ ni goles.";
+});
+
+$("restHistory").addEventListener("click",e=>{
+  const b=e.target.closest("[data-restdel]");
+
+  if(b && confirm("¿Eliminar este descanso?")){
+    state.rests=state.rests.filter(
+      r=>String(r.id)!==b.dataset.restdel
+    );
+
+    save();
+    renderRests();
+  }
+});
+
+renderRests();
 </script>
 </body>
 </html>
